@@ -1,0 +1,7 @@
+{
+  "type": "Json",
+  "properties": {
+    "encoding": "UTF8",
+    "format": "LineSeparated"
+  }
+}

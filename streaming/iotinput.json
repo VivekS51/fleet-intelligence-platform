@@ -1,0 +1,19 @@
+{
+  "type": "Stream",
+  "datasource": {
+    "type": "Microsoft.Devices/IotHubs",
+    "properties": {
+      "iotHubNamespace": "fleet-iothub-jh11a1233",
+      "sharedAccessPolicyName": "iothubowner",
+      "sharedAccessPolicyKey": "s/R9eiTz1/mO7CL/Oc1jlGasLMlzCukurAIoTDFOi8Y=",
+      "consumerGroupName": "$Default",
+      "endpoint": "messages/events"
+    }
+  },
+  "serialization": {
+    "type": "Json",
+    "properties": {
+      "encoding": "UTF8"
+    }
+  }
+}

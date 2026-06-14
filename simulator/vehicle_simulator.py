@@ -3,67 +3,110 @@ import json
 import time
 import random
 import math
+import threading
 from datetime import datetime, timezone
+
 from azure.iot.device import IoTHubDeviceClient, Message
 from dotenv import load_dotenv
 
 load_dotenv()
 
-CONNECTION_STRING = os.getenv("IOT_HUB_CONNECTION_STRING")
+SHIPS = [
+    {
+        "shipId": "MSC-BELLISSIMA",
+        "connection_string": os.getenv("MSC_BELLISSIMA_CONNECTION_STRING"),
+        "base_lat": 1.3521,
+        "base_lon": 103.8198
+    },
+    {
+        "shipId": "MSC-GRANDIOSA",
+        "connection_string": os.getenv("MSC_GRANDIOSA_CONNECTION_STRING"),
+        "base_lat": 1.4000,
+        "base_lon": 103.9000
+    },
+    {
+        "shipId": "MSC-SEASHORE",
+        "connection_string": os.getenv("MSC_SEASHORE_CONNECTION_STRING"),
+        "base_lat": 1.3000,
+        "base_lon": 103.7500
+    }
+]
 
-# Simulated route around Singapore (Southeast Asia - matches our IoT Hub region)
-BASE_LAT = 1.3521
-BASE_LON = 103.8198
 
-def generate_telemetry(vehicle_id, tick):
-    """Generate realistic vehicle telemetry data."""
-    # Simulate movement along a route
-    lat = BASE_LAT + (math.sin(tick * 0.1) * 0.01)
-    lon = BASE_LON + (math.cos(tick * 0.1) * 0.01)
+def generate_telemetry(ship, tick):
+    lat = ship["base_lat"] + (math.sin(tick * 0.1) * 0.01)
+    lon = ship["base_lon"] + (math.cos(tick * 0.1) * 0.01)
 
     return {
-        "vehicle_id": vehicle_id,
+        "shipId": ship["shipId"],
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "location": {
-            "latitude": round(lat, 6),
-            "longitude": round(lon, 6)
-        },
-        "speed_kmh": round(random.uniform(0, 120), 1),
-        "engine_temp_c": round(random.uniform(85, 105), 1),
-        "fuel_level_pct": round(random.uniform(20, 100), 1),
-        "rpm": random.randint(700, 4000),
-        "odometer_km": 50000 + tick,
-        "status": random.choice(["moving", "moving", "moving", "idle", "stopped"])
+        "latitude": round(lat, 6),
+        "longitude": round(lon, 6),
+        "speed": round(random.uniform(10, 35), 1),
+        "fuelLevel": round(random.uniform(30, 100), 1),
+        "engineTemp": round(random.uniform(75, 95), 1),
+        "heading": random.randint(0, 359),
+        "status": random.choice(
+            ["sailing", "sailing", "sailing", "anchored"]
+        )
     }
 
-def main():
-    print(f"Connecting to IoT Hub...")
-    client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+
+def simulate_ship(ship):
+    client = IoTHubDeviceClient.create_from_connection_string(
+        ship["connection_string"]
+    )
+
     client.connect()
-    print(f"Connected! Sending telemetry for fleet-vehicle-001")
-    print("Press Ctrl+C to stop\n")
+
+    print(f"Connected: {ship['shipId']}")
 
     tick = 0
+
     try:
         while True:
-            telemetry = generate_telemetry("fleet-vehicle-001", tick)
+            telemetry = generate_telemetry(ship, tick)
+
             message = Message(json.dumps(telemetry))
             message.content_type = "application/json"
             message.content_encoding = "utf-8"
 
             client.send_message(message)
-            print(f"[{telemetry['timestamp']}] Sent: speed={telemetry['speed_kmh']} km/h, "
-                  f"lat={telemetry['location']['latitude']}, "
-                  f"fuel={telemetry['fuel_level_pct']}%")
+
+            print(
+                f"{ship['shipId']} | "
+                f"speed={telemetry['speed']} knots | "
+                f"fuel={telemetry['fuelLevel']}% | "
+                f"temp={telemetry['engineTemp']}°C"
+            )
 
             tick += 1
-            time.sleep(5)  # Send every 5 seconds
+            time.sleep(5)
 
     except KeyboardInterrupt:
-        print("\nStopping simulator...")
+        pass
     finally:
         client.disconnect()
-        print("Disconnected.")
+
+
+def main():
+    threads = []
+
+    for ship in SHIPS:
+        t = threading.Thread(
+            target=simulate_ship,
+            args=(ship,),
+            daemon=True
+        )
+        threads.append(t)
+        t.start()
+
+    print("Fleet simulator started...")
+    print("Press Ctrl+C to stop")
+
+    while True:
+        time.sleep(1)
+
 
 if __name__ == "__main__":
     main()

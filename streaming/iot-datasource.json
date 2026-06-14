@@ -1,0 +1,10 @@
+{
+  "type": "Microsoft.Devices/IotHubs",
+  "properties": {
+    "iotHubNamespace": "fleet-iothub-jh11a1233",
+    "sharedAccessPolicyName": "service",
+    "sharedAccessPolicyKey": "YOUR_SERVICE_KEY",
+    "consumerGroupName": "$Default",
+    "endpoint": "messages/events"
+  }
+}

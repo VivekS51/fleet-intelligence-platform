@@ -1,2 +1,5 @@
 .env 
 venv/ 
+
+streaming/blob-datasource.json
+streaming/bloboutput.json
