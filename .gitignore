@@ -1,5 +1,7 @@
-.env 
-venv/ 
-
-streaming/blob-datasource.json
-streaming/bloboutput.json
+venv/
+flink311/
+__pycache__/
+*.pyc
+.env
+.vscode/
+.idea/
