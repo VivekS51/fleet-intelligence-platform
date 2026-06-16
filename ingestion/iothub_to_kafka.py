@@ -9,7 +9,7 @@ load_dotenv()
 EVENTHUB_CONN_STR = os.getenv("IOTHUB_EVENTHUB_CONN_STR")
 
 producer = KafkaProducer(
-    bootstrap_servers="localhost:9092",
+    bootstrap_servers="localhost:29092",
     value_serializer=lambda v: json.dumps(v).encode("utf-8")
 )
 

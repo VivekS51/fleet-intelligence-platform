@@ -1,3 +1,4 @@
+
 import json
 from datetime import datetime, timezone
 
@@ -13,14 +14,14 @@ from pyflink.common.watermark_strategy import WatermarkStrategy
 from pyflink.common import Types
 
 from influxdb_client import InfluxDBClient, Point, WritePrecision
-from influxdb_client.client.write_api import SYNCHRONOUS
+
 
 
 # ==========================================================
 # InfluxDB Configuration
 # ==========================================================
 
-INFLUX_URL = "http://localhost:8086"
+INFLUX_URL = "http://influxdb:8086"
 INFLUX_TOKEN = "fleet-super-secret-token"
 INFLUX_ORG = "fleet-org"
 INFLUX_BUCKET = "ship-telemetry"
@@ -29,9 +30,10 @@ influx_client = InfluxDBClient(
     url=INFLUX_URL,
     token=INFLUX_TOKEN,
     org=INFLUX_ORG,
+    timeout=30000
 )
 
-write_api = influx_client.write_api(write_options=SYNCHRONOUS)
+write_api = influx_client.write_api()
 
 
 # ==========================================================
@@ -134,14 +136,13 @@ def run_flink_job():
     env.set_parallelism(1)
 
     # Load Kafka JARs
-    env.add_jars(
-        "file:///C:/Users/DELL/Documents/fleet-intelligence-platform/flink-jars/flink-connector-kafka-3.2.0-1.18.jar",
-        "file:///C:/Users/DELL/Documents/fleet-intelligence-platform/flink-jars/kafka-clients-3.5.1.jar"
-    )
+      # Load Kafka JARs
+        # Load Kafka JARs
+  
 
     kafka_source = (
         KafkaSource.builder()
-        .set_bootstrap_servers("localhost:9092")
+        .set_bootstrap_servers("kafka:9092")
         .set_topics("ship-telemetry")
         .set_group_id("flink-processor")
         .set_starting_offsets(
@@ -170,7 +171,7 @@ def run_flink_job():
 
     kafka_sink = (
         KafkaSink.builder()
-        .set_bootstrap_servers("localhost:9092")
+        .set_bootstrap_servers("kafka:9092")
         .set_record_serializer(
             KafkaRecordSerializationSchema.builder()
             .set_topic("ship-alerts")
@@ -191,3 +192,4 @@ def run_flink_job():
 
 if __name__ == "__main__":
     run_flink_job()
+

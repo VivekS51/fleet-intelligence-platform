@@ -1,0 +1,17 @@
+FROM flink:1.18.1-scala_2.12-java11
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    apt-get clean
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+RUN pip3 install --no-cache-dir \
+    apache-flink==1.18.1 \
+    influxdb-client \
+    kafka-python \
+    azure-eventhub \
+    python-dotenv
+
+ENV PYFLINK_CLIENT_EXECUTABLE=python3

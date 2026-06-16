@@ -1,0 +1,131 @@
+name: fleet-intelligence-platform
+services:
+  influxdb:
+    container_name: influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: fleet-super-secret-token
+      DOCKER_INFLUXDB_INIT_BUCKET: ship-telemetry
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_ORG: fleet-org
+      DOCKER_INFLUXDB_INIT_PASSWORD: fleetpass123
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+    image: influxdb:2.7
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8086
+        published: "8086"
+        protocol: tcp
+    volumes:
+      - type: volume
+        source: influxdb-data
+        target: /var/lib/influxdb2
+        volume: {}
+  jobmanager:
+    command:
+      - jobmanager
+    container_name: jobmanager
+    depends_on:
+      kafka:
+        condition: service_started
+        required: true
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+    image: fleet-flink-python
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8081
+        published: "8081"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: D:\Projects\fleet-intelligence-platform\flink-jars
+        target: /opt/flink/lib/custom
+        bind:
+          create_host_path: true
+  kafka:
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_started
+        required: true
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_BROKER_ID: "1"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    image: confluentinc/cp-kafka:7.5.0
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 9092
+        published: "9092"
+        protocol: tcp
+      - mode: ingress
+        target: 29092
+        published: "29092"
+        protocol: tcp
+  kafka-ui:
+    container_name: kafka-ui
+    depends_on:
+      kafka:
+        condition: service_started
+        required: true
+    environment:
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_NAME: local
+    image: provectuslabs/kafka-ui:latest
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8080
+        published: "8080"
+        protocol: tcp
+  taskmanager:
+    command:
+      - taskmanager
+    container_name: taskmanager
+    depends_on:
+      jobmanager:
+        condition: service_started
+        required: true
+    environment:
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 4
+    image: fleet-flink-python
+    networks:
+      default: null
+    volumes:
+      - type: bind
+        source: D:\Projects\fleet-intelligence-platform\flink-jars
+        target: /opt/flink/lib/custom
+        bind:
+          create_host_path: true
+  zookeeper:
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: "2181"
+    image: confluentinc/cp-zookeeper:7.5.0
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 2181
+        published: "2181"
+        protocol: tcp
+networks:
+  default:
+    name: fleet-intelligence-platform_default
+volumes:
+  influxdb-data:
+    name: fleet-intelligence-platform_influxdb-data
