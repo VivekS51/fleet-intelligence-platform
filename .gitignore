@@ -5,3 +5,10 @@ __pycache__/
 .env
 .vscode/
 .idea/
+mlflow.db
+mlflow/
+
+ml/data/*.npy
+
+ml/models/*.pt
+ml/models/*.pkl
